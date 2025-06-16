@@ -1,9 +1,7 @@
 "use client"
 
-import { useState, useRef } from 'react'
-import { Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { createClient } from '@/lib/supabase/client';
+import { useRef, useState } from 'react';
 
 export default function LoginPage() {
   const [message, setMessage] = useState("")
@@ -11,6 +9,10 @@ export default function LoginPage() {
   const formRef = useRef<HTMLFormElement>(null)
   const [resetEmail, setResetEmail] = useState("")
   const [email, setEmail] = useState("")
+
+  const getSiteUrl = () => {
+    return process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+  }
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,7 +35,14 @@ export default function LoginPage() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: 'https://agent-flow-sigma.vercel.app' } });
+    const siteUrl = getSiteUrl();
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password, 
+      options: { 
+        emailRedirectTo: `${siteUrl}/verify` 
+      } 
+    });
     if (error) setMessage(error.message);
     else setMessage("Check your email for a confirmation link before logging in.");
     setLoading(null);
@@ -55,7 +64,10 @@ export default function LoginPage() {
     setLoading('reset');
     setMessage("");
     const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { redirectTo: 'https://agent-flow-sigma.vercel.app/reset-password' });
+    const siteUrl = getSiteUrl();
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { 
+      redirectTo: `${siteUrl}/reset-password` 
+    });
     if (error) setMessage(error.message);
     else setMessage("Check your email for a password reset link.");
     setLoading(null);
@@ -67,7 +79,7 @@ export default function LoginPage() {
     setLoading('login');
     setMessage("");
     const supabase = createClient();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const siteUrl = getSiteUrl();
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
